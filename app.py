@@ -50,10 +50,22 @@ with tabs[0]:
     # --- CUSTOM CSS ---
     st.markdown("""
         <style>
-        .stSlider > div[data-baseweb="slider"] > div {
-            background: #28a745 !important;
+        /* Sửa màu thanh slider thành xanh lá */
+        div[data-baseweb="slider"] [role="slider"] {
+            background-color: #28a745 !important;
+            border: 1px solid #28a745 !important;
         }
-        .stMultiSelect > div[data-baseweb="select"] > div {
+        
+        div[data-baseweb="slider"] > div > div {
+            background: #28a74533 !important;
+        }
+
+        .stMultiSelect [data-baseweb="tag"] {
+            background-color: #28a745 !important;
+            color: white !important;
+        }
+
+        .stMultiSelect [data-baseweb="select"] > div {
             border-color: #28a745 !important;
         }
         </style>
