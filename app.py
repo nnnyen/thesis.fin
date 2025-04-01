@@ -5,6 +5,13 @@ from vnstock import Vnstock
 from bs4 import BeautifulSoup
 import urllib3
 
+import streamlit as st
+import pandas as pd
+import plotly.graph_objects as go
+from vnstock import Vnstock
+from bs4 import BeautifulSoup
+import urllib3
+
 # === Setup ===
 st.set_page_config(page_title="NY SECURITIES", layout="wide")
 http = urllib3.PoolManager()
@@ -48,7 +55,7 @@ with tabs[0]:
     hist_df = stock.quote.history(symbol=symbol, start="2022-01-01", end="2025-01-01", interval="1D")
     hist_df['time'] = pd.to_datetime(hist_df['time'])
     hist_df = hist_df.drop_duplicates(subset='time')
-    hist_df = hist_df.set_index('time').asfreq('D').fillna(method='ffill').reset_index()
+    hist_df = hist_df.set_index('time').asfreq('D').ffill().reset_index()
 
     fig = go.Figure(data=[go.Candlestick(
         x=hist_df['time'], open=hist_df['open'], high=hist_df['high'],
@@ -92,10 +99,11 @@ with tabs[0]:
         height=650,
         autosize=True,
         xaxis_rangeslider_visible=True,
-        xaxis_range=[hist_df['time'].max() - pd.Timedelta(days=365), hist_df['time'].max()]
+        xaxis_range=[hist_df['time'].max() - pd.Timedelta(days=365), hist_df['time'].max()],
+        yaxis=dict(autorange=True)
     )
 
-    chart_col, info_col = st.columns([6, 2])
+    chart_col, info_col = st.columns([7, 2])
 
     with chart_col:
         st.plotly_chart(fig, use_container_width=True)
