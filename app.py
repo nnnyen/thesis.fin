@@ -54,7 +54,7 @@ with tabs[0]:
     row_heights = [1.0]
     if apply and any(ind in indicators for ind in ["RSI", "MACD", "Stochastic Oscillator"]):
         rows += 1
-        row_heights = [0.7, 0.3]  # Further shrink second row to resolve overlap
+        row_heights = [0.7, 0.3]
 
     fig = make_subplots(
         rows=rows, cols=1,
@@ -116,8 +116,7 @@ with tabs[0]:
     fig.update_layout(
         height=850,
         title=f"Biểu đồ giá cổ phiếu {symbol}",
-        xaxis_rangeslider_visible=True,
-        xaxis_rangeslider_thickness=0.005,  # Reduced further
+        xaxis_rangeslider_visible=not apply,
         xaxis_range=[start_date, end_date],
         hovermode="x unified",
         xaxis_showspikes=True,
