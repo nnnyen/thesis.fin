@@ -6,6 +6,7 @@ from vnstock import Vnstock
 from bs4 import BeautifulSoup
 import urllib3
 
+
 # === Setup ===
 st.set_page_config(page_title="NY SECURITIES", layout="wide")
 http = urllib3.PoolManager()
@@ -56,8 +57,13 @@ with tabs[0]:
         rows += 1
         row_heights.append(0.4)
 
-    fig = make_subplots(rows=rows, cols=1, shared_xaxes=True, vertical_spacing=0.03, row_heights=row_heights,
-                        specs=[[{"type": "candlestick"}]] + [[{"type": "xy"}]] * (rows - 1))
+    fig = make_subplots(
+        rows=rows, cols=1,
+        shared_xaxes=True,
+        vertical_spacing=0.05,
+        row_heights=row_heights,
+        specs=[[{"type": "candlestick"}]] + [[{"type": "xy"}]] * (rows - 1)
+    )
 
     fig.add_trace(go.Candlestick(
         x=hist_df['time'], open=hist_df['open'], high=hist_df['high'],
@@ -87,9 +93,9 @@ with tabs[0]:
             macd = exp1 - exp2
             signal = macd.ewm(span=9, adjust=False).mean()
             hist = macd - signal
+            fig.add_trace(go.Bar(x=hist_df['time'], y=hist, name='Histogram', marker_color='pink'), row=indicator_row, col=1)
             fig.add_trace(go.Scatter(x=hist_df['time'], y=macd, mode='lines', name='MACD', line=dict(color='blue')), row=indicator_row, col=1)
             fig.add_trace(go.Scatter(x=hist_df['time'], y=signal, mode='lines', name='Signal', line=dict(color='red')), row=indicator_row, col=1)
-            fig.add_trace(go.Bar(x=hist_df['time'], y=hist, name='Histogram', marker_color='pink'), row=indicator_row, col=1)
         if "Bollinger Bands" in indicators:
             sma = hist_df['close'].rolling(window=20).mean()
             std = hist_df['close'].rolling(window=20).std()
@@ -106,13 +112,18 @@ with tabs[0]:
             fig.add_trace(go.Scatter(x=hist_df['time'], y=d_percent, mode='lines', name='%D'), row=indicator_row, col=1)
 
     fig.update_layout(
-        height=850,
+        height=1000,
         title=f"Biểu đồ giá cổ phiếu {symbol}",
         xaxis_rangeslider_visible=True,
         xaxis_range=[hist_df['time'].max() - pd.Timedelta(days=365), hist_df['time'].max()],
-        yaxis=dict(fixedrange=False, autorange=True),
-        showlegend=True,
-        hovermode="x unified"
+        hovermode="x unified",
+        xaxis_showspikes=True,
+        xaxis_spikemode='across',
+        xaxis_spikesnap='cursor',
+        xaxis_spikethickness=1,
+        xaxis_spikedash='dot',
+        xaxis_spikecolor='black',
+        showlegend=True
     )
 
     chart_col, info_col = st.columns([7, 2])
