@@ -6,6 +6,7 @@ from vnstock import Vnstock
 from bs4 import BeautifulSoup
 import urllib3
 
+
 # === Setup ===
 st.set_page_config(page_title="NY SECURITIES", layout="wide")
 http = urllib3.PoolManager()
@@ -54,7 +55,7 @@ with tabs[0]:
     row_heights = [1.0]
     if apply and any(ind in indicators for ind in ["RSI", "MACD", "Stochastic Oscillator"]):
         rows += 1
-        row_heights = [0.65, 0.35]
+        row_heights = [0.7, 0.3]
 
     fig = make_subplots(
         rows=rows, cols=1,
@@ -110,12 +111,15 @@ with tabs[0]:
             fig.add_trace(go.Scatter(x=hist_df['time'], y=k_percent, mode='lines', name='%K'), row=indicator_row, col=1)
             fig.add_trace(go.Scatter(x=hist_df['time'], y=d_percent, mode='lines', name='%D'), row=indicator_row, col=1)
 
+    start_date = pd.to_datetime(hist_df['time'].max() - pd.Timedelta(days=365))
+    end_date = pd.to_datetime(hist_df['time'].max())
+
     fig.update_layout(
         height=850,
         title=f"Biểu đồ giá cổ phiếu {symbol}",
         xaxis_rangeslider_visible=True,
-        xaxis_rangeslider_thickness=0.05,
-        xaxis_range=[hist_df['time'].max() - pd.Timedelta(days=365), hist_df['time'].max()],
+        xaxis_rangeslider_thickness=0.02,
+        xaxis_range=[start_date, end_date],
         hovermode="x unified",
         xaxis_showspikes=True,
         xaxis_spikemode='across',
