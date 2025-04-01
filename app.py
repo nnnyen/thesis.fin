@@ -6,7 +6,6 @@ from vnstock import Vnstock
 from bs4 import BeautifulSoup
 import urllib3
 
-
 # === Setup ===
 st.set_page_config(page_title="NY SECURITIES", layout="wide")
 http = urllib3.PoolManager()
@@ -55,7 +54,7 @@ with tabs[0]:
     row_heights = [1.0]
     if apply and any(ind in indicators for ind in ["RSI", "MACD", "Stochastic Oscillator"]):
         rows += 1
-        row_heights = [0.7, 0.3]
+        row_heights = [0.75, 0.25]  # Adjusted to shrink second row
 
     fig = make_subplots(
         rows=rows, cols=1,
@@ -118,7 +117,7 @@ with tabs[0]:
         height=850,
         title=f"Biểu đồ giá cổ phiếu {symbol}",
         xaxis_rangeslider_visible=True,
-        xaxis_rangeslider_thickness=0.02,
+        xaxis_rangeslider_thickness=0.01,  # Minimized thickness
         xaxis_range=[start_date, end_date],
         hovermode="x unified",
         xaxis_showspikes=True,
