@@ -1,7 +1,2 @@
 streamlit
 pandas
-plotly
-vnstock
-beautifulsoup4
-openpyxl
-urllib3
