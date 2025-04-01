@@ -1,13 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
-from vnstock import Vnstock
-from bs4 import BeautifulSoup
-import urllib3
-
-import streamlit as st
-import pandas as pd
-import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 from vnstock import Vnstock
 from bs4 import BeautifulSoup
 import urllib3
@@ -57,17 +51,29 @@ with tabs[0]:
     hist_df = hist_df.drop_duplicates(subset='time')
     hist_df = hist_df.set_index('time').asfreq('D').ffill().reset_index()
 
-    fig = go.Figure(data=[go.Candlestick(
+    # Subplot setup
+    rows = 1
+    row_heights = [0.6]
+    if apply and any(ind in indicators for ind in ["RSI", "MACD"]):
+        rows += 1
+        row_heights.append(0.4)
+
+    fig = make_subplots(rows=rows, cols=1, shared_xaxes=True, vertical_spacing=0.03, row_heights=row_heights,
+                        specs=[[{"type": "candlestick"}]] + [[{"type": "scatter"}]] * (rows - 1))
+
+    fig.add_trace(go.Candlestick(
         x=hist_df['time'], open=hist_df['open'], high=hist_df['high'],
-        low=hist_df['low'], close=hist_df['close']
-    )])
+        low=hist_df['low'], close=hist_df['close'], name="Giá"
+    ), row=1, col=1)
+
+    indicator_row = 2 if rows > 1 else 1
 
     if apply:
         if "SMA 10/20" in indicators:
             hist_df['SMA10'] = hist_df['close'].rolling(10).mean()
             hist_df['SMA20'] = hist_df['close'].rolling(20).mean()
-            fig.add_trace(go.Scatter(x=hist_df['time'], y=hist_df['SMA10'], mode='lines', name='SMA 10'))
-            fig.add_trace(go.Scatter(x=hist_df['time'], y=hist_df['SMA20'], mode='lines', name='SMA 20'))
+            fig.add_trace(go.Scatter(x=hist_df['time'], y=hist_df['SMA10'], mode='lines', name='SMA 10'), row=1, col=1)
+            fig.add_trace(go.Scatter(x=hist_df['time'], y=hist_df['SMA20'], mode='lines', name='SMA 20'), row=1, col=1)
         if "RSI" in indicators:
             delta = hist_df['close'].diff()
             gain = delta.where(delta > 0, 0)
@@ -76,31 +82,29 @@ with tabs[0]:
             avg_loss = loss.rolling(14).mean()
             rs = avg_gain / avg_loss
             rsi = 100 - (100 / (1 + rs))
-            fig.add_trace(go.Scatter(x=hist_df['time'], y=rsi, mode='lines', name='RSI'))
+            fig.add_trace(go.Scatter(x=hist_df['time'], y=rsi, mode='lines', name='RSI'), row=indicator_row, col=1)
         if "MACD" in indicators:
             exp1 = hist_df['close'].ewm(span=12, adjust=False).mean()
             exp2 = hist_df['close'].ewm(span=26, adjust=False).mean()
             macd = exp1 - exp2
             signal = macd.ewm(span=9, adjust=False).mean()
-            fig.add_trace(go.Scatter(x=hist_df['time'], y=macd, mode='lines', name='MACD'))
-            fig.add_trace(go.Scatter(x=hist_df['time'], y=signal, mode='lines', name='Signal'))
+            fig.add_trace(go.Scatter(x=hist_df['time'], y=macd, mode='lines', name='MACD'), row=indicator_row, col=1)
+            fig.add_trace(go.Scatter(x=hist_df['time'], y=signal, mode='lines', name='Signal'), row=indicator_row, col=1)
         if "Bollinger Bands" in indicators:
             sma = hist_df['close'].rolling(window=20).mean()
             std = hist_df['close'].rolling(window=20).std()
             upper_band = sma + (2 * std)
             lower_band = sma - (2 * std)
-            fig.add_trace(go.Scatter(x=hist_df['time'], y=upper_band, mode='lines', name='Upper Band'))
-            fig.add_trace(go.Scatter(x=hist_df['time'], y=lower_band, mode='lines', name='Lower Band'))
+            fig.add_trace(go.Scatter(x=hist_df['time'], y=upper_band, mode='lines', name='Upper Band'), row=1, col=1)
+            fig.add_trace(go.Scatter(x=hist_df['time'], y=lower_band, mode='lines', name='Lower Band'), row=1, col=1)
 
     fig.update_layout(
+        height=800,
         title=f"Biểu đồ giá cổ phiếu {symbol}",
-        xaxis_title="Thời gian",
-        yaxis_title="Giá",
-        height=650,
-        autosize=True,
         xaxis_rangeslider_visible=True,
         xaxis_range=[hist_df['time'].max() - pd.Timedelta(days=365), hist_df['time'].max()],
-        yaxis=dict(autorange=True)
+        yaxis=dict(fixedrange=False),
+        showlegend=True
     )
 
     chart_col, info_col = st.columns([7, 2])
@@ -120,6 +124,7 @@ with tabs[0]:
         st.subheader(":newspaper: Tin tức liên quan")
         for _, row in news.head(5).iterrows():
             st.markdown(f"[{row['newsdate']} - {row['title']}]({row['url']})")
+
 
 # === Tab 2: CANSLIM ===
 with tabs[1]:
