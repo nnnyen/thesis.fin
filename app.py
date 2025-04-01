@@ -6,6 +6,7 @@ from vnstock import Vnstock
 from bs4 import BeautifulSoup
 import urllib3
 
+
 # === Setup ===
 st.set_page_config(page_title="NY SECURITIES", layout="wide")
 http = urllib3.PoolManager()
@@ -41,20 +42,18 @@ with tabs[0]:
         default_symbol = "VNM"
         symbol = st.selectbox("Chọn mã cổ phiếu:", company_df["symbol"].unique(), index=company_df["symbol"].tolist().index(default_symbol))
     with col2:
-        indicators = st.multiselect("Chọn chỉ báo kỹ thuật:", ["SMA 10/20", "RSI", "MACD", "Bollinger Bands"])
+        indicators = st.multiselect("Chọn chỉ báo kỹ thuật:", ["SMA 10/20", "RSI", "MACD", "Bollinger Bands", "Stochastic Oscillator"])
         apply = st.button("Áp dụng")
 
-    # Tải dữ liệu luôn cho VNM và chỉ áp dụng chỉ báo nếu nhấn nút
     stock = Vnstock().stock(symbol=symbol, source='TCBS')
     hist_df = stock.quote.history(symbol=symbol, start="2022-01-01", end="2025-01-01", interval="1D")
     hist_df['time'] = pd.to_datetime(hist_df['time'])
     hist_df = hist_df.drop_duplicates(subset='time')
     hist_df = hist_df.set_index('time').asfreq('D').ffill().reset_index()
 
-    # Subplot setup
     rows = 1
     row_heights = [0.6]
-    if apply and any(ind in indicators for ind in ["RSI", "MACD"]):
+    if apply and any(ind in indicators for ind in ["RSI", "MACD", "Stochastic Oscillator"]):
         rows += 1
         row_heights.append(0.4)
 
@@ -88,8 +87,10 @@ with tabs[0]:
             exp2 = hist_df['close'].ewm(span=26, adjust=False).mean()
             macd = exp1 - exp2
             signal = macd.ewm(span=9, adjust=False).mean()
+            hist = macd - signal
             fig.add_trace(go.Scatter(x=hist_df['time'], y=macd, mode='lines', name='MACD'), row=indicator_row, col=1)
             fig.add_trace(go.Scatter(x=hist_df['time'], y=signal, mode='lines', name='Signal'), row=indicator_row, col=1)
+            fig.add_trace(go.Bar(x=hist_df['time'], y=hist, name='Histogram'), row=indicator_row, col=1)
         if "Bollinger Bands" in indicators:
             sma = hist_df['close'].rolling(window=20).mean()
             std = hist_df['close'].rolling(window=20).std()
@@ -97,13 +98,20 @@ with tabs[0]:
             lower_band = sma - (2 * std)
             fig.add_trace(go.Scatter(x=hist_df['time'], y=upper_band, mode='lines', name='Upper Band'), row=1, col=1)
             fig.add_trace(go.Scatter(x=hist_df['time'], y=lower_band, mode='lines', name='Lower Band'), row=1, col=1)
+        if "Stochastic Oscillator" in indicators:
+            low_min = hist_df['low'].rolling(window=14).min()
+            high_max = hist_df['high'].rolling(window=14).max()
+            k_percent = 100 * ((hist_df['close'] - low_min) / (high_max - low_min))
+            d_percent = k_percent.rolling(3).mean()
+            fig.add_trace(go.Scatter(x=hist_df['time'], y=k_percent, mode='lines', name='%K'), row=indicator_row, col=1)
+            fig.add_trace(go.Scatter(x=hist_df['time'], y=d_percent, mode='lines', name='%D'), row=indicator_row, col=1)
 
     fig.update_layout(
         height=800,
         title=f"Biểu đồ giá cổ phiếu {symbol}",
         xaxis_rangeslider_visible=True,
         xaxis_range=[hist_df['time'].max() - pd.Timedelta(days=365), hist_df['time'].max()],
-        yaxis=dict(fixedrange=False),
+        yaxis=dict(fixedrange=False, autorange=True),
         showlegend=True
     )
 
