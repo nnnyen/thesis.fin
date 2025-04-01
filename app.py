@@ -33,7 +33,7 @@ tabs = st.tabs(["Biểu đồ giá", "STOCK RECOMMEND BY CANSLIM"])
 
 # === Tab 1: Biểu đồ giá ===
 with tabs[0]:
-    st.title("\U0001F4C8 BIểU ĐỒ GIÁ")
+    st.title("\U0001F4C8 BIỂU ĐỒ GIÁ")
 
     col1, col2 = st.columns([2, 2])
     with col1:
@@ -46,6 +46,11 @@ with tabs[0]:
     hist_df = stock.quote.history(symbol=symbol, start="2022-01-01", end="2025-01-01", interval="1D")
     hist_df['time'] = pd.to_datetime(hist_df['time'])
 
+    # Fill missing data
+    hist_df.sort_values("time", inplace=True)
+    hist_df.fillna(method='ffill', inplace=True)
+
+    # Candlestick chart with range selector
     fig = go.Figure(data=[go.Candlestick(
         x=hist_df['time'], open=hist_df['open'], high=hist_df['high'],
         low=hist_df['low'], close=hist_df['close']
@@ -57,8 +62,16 @@ with tabs[0]:
         fig.add_trace(go.Scatter(x=hist_df['time'], y=hist_df['SMA10'], mode='lines', name='SMA 10'))
         fig.add_trace(go.Scatter(x=hist_df['time'], y=hist_df['SMA20'], mode='lines', name='SMA 20'))
 
-    fig.update_layout(title=f"Biểu đồ giá cổ phiếu {symbol}", xaxis_title="Thời gian", yaxis_title="Giá")
-    chart_col, info_col = st.columns([3, 1])
+    fig.update_layout(
+        title=f"Biểu đồ giá cổ phiếu {symbol}",
+        xaxis_title="Thời gian",
+        yaxis_title="Giá",
+        height=600,
+        xaxis_rangeslider_visible=True,
+        xaxis_range=[hist_df['time'].max() - pd.Timedelta(days=365), hist_df['time'].max()]
+    )
+
+    chart_col, info_col = st.columns([5, 2])
 
     with chart_col:
         st.plotly_chart(fig, use_container_width=True)
@@ -69,18 +82,13 @@ with tabs[0]:
         st.write(f"**Tên:** {info['Company Common Name']}")
         st.write(f"**Ngành:** {info['GICS Industry Name']}")
         st.write(f"**Năm thành lập:** {info['Organization Founded Year']}")
+        st.write(f"**Sàn:** {info['Exchange Name']}")
 
         news = get_news(symbol)
         st.subheader(":newspaper: Tin tức liên quan")
         for _, row in news.head(5).iterrows():
             st.markdown(f"[{row['newsdate']} - {row['title']}]({row['url']})")
 
-    st.subheader(":scroll: Giao dịch realtime")
-    try:
-        realtime_df = stock.quote.intraday(symbol=symbol)
-        st.dataframe(realtime_df, use_container_width=True)
-    except:
-        st.warning("Không tải được dữ liệu realtime")
 
 # === Tab 2: CANSLIM ===
 with tabs[1]:
