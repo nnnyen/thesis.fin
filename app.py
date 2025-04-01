@@ -7,6 +7,7 @@ from bs4 import BeautifulSoup
 import urllib3
 
 
+
 # === Setup ===
 st.set_page_config(page_title="NY SECURITIES", layout="wide")
 http = urllib3.PoolManager()
@@ -64,6 +65,17 @@ with tabs[0]:
         x=hist_df['time'], open=hist_df['open'], high=hist_df['high'],
         low=hist_df['low'], close=hist_df['close'], name="Giá"
     ), row=1, col=1)
+
+    # Vertical hover line
+    fig.update_layout(
+        hovermode="x unified",
+        shapes=[dict(
+            type="line",
+            yref="paper", y0=0, y1=1,
+            line=dict(dash="dot", width=1),
+            layer="above"
+        )]
+    )
 
     indicator_row = 2 if rows > 1 else 1
 
@@ -132,6 +144,7 @@ with tabs[0]:
         st.subheader(":newspaper: Tin tức liên quan")
         for _, row in news.head(5).iterrows():
             st.markdown(f"[{row['newsdate']} - {row['title']}]({row['url']})")
+
 
 
 # === Tab 2: CANSLIM ===
