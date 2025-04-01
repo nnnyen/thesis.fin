@@ -5,7 +5,6 @@ from vnstock import Vnstock
 from bs4 import BeautifulSoup
 import urllib3
 
-
 # === Setup ===
 st.set_page_config(page_title="NY SECURITIES", layout="wide")
 http = urllib3.PoolManager()
@@ -44,22 +43,19 @@ with tabs[0]:
         indicators = st.multiselect("Chọn chỉ báo kỹ thuật:", ["SMA 10/20", "RSI", "MACD", "Bollinger Bands"])
         apply = st.button("Áp dụng")
 
+    # Tải dữ liệu luôn cho VNM và chỉ áp dụng chỉ báo nếu nhấn nút
+    stock = Vnstock().stock(symbol=symbol, source='TCBS')
+    hist_df = stock.quote.history(symbol=symbol, start="2022-01-01", end="2025-01-01", interval="1D")
+    hist_df['time'] = pd.to_datetime(hist_df['time'])
+    hist_df = hist_df.drop_duplicates(subset='time')
+    hist_df = hist_df.set_index('time').asfreq('D').fillna(method='ffill').reset_index()
+
+    fig = go.Figure(data=[go.Candlestick(
+        x=hist_df['time'], open=hist_df['open'], high=hist_df['high'],
+        low=hist_df['low'], close=hist_df['close']
+    )])
+
     if apply:
-        stock = Vnstock().stock(symbol=symbol, source='TCBS')
-        hist_df = stock.quote.history(symbol=symbol, start="2022-01-01", end="2025-01-01", interval="1D")
-        hist_df['time'] = pd.to_datetime(hist_df['time'])
-
-        # Fill missing dates and forward-fill data
-        full_time_range = pd.date_range(start=hist_df['time'].min(), end=hist_df['time'].max(), freq='D')
-        hist_df = hist_df.set_index('time').reindex(full_time_range).fillna(method='ffill').rename_axis('time').reset_index()
-
-        # Candlestick chart
-        fig = go.Figure(data=[go.Candlestick(
-            x=hist_df['time'], open=hist_df['open'], high=hist_df['high'],
-            low=hist_df['low'], close=hist_df['close']
-        )])
-
-        # Add indicators
         if "SMA 10/20" in indicators:
             hist_df['SMA10'] = hist_df['close'].rolling(10).mean()
             hist_df['SMA20'] = hist_df['close'].rolling(20).mean()
@@ -89,33 +85,33 @@ with tabs[0]:
             fig.add_trace(go.Scatter(x=hist_df['time'], y=upper_band, mode='lines', name='Upper Band'))
             fig.add_trace(go.Scatter(x=hist_df['time'], y=lower_band, mode='lines', name='Lower Band'))
 
-        fig.update_layout(
-            title=f"Biểu đồ giá cổ phiếu {symbol}",
-            xaxis_title="Thời gian",
-            yaxis_title="Giá",
-            height=650,
-            autosize=True,
-            xaxis_rangeslider_visible=True,
-            xaxis_range=[hist_df['time'].max() - pd.Timedelta(days=365), hist_df['time'].max()]
-        )
+    fig.update_layout(
+        title=f"Biểu đồ giá cổ phiếu {symbol}",
+        xaxis_title="Thời gian",
+        yaxis_title="Giá",
+        height=650,
+        autosize=True,
+        xaxis_rangeslider_visible=True,
+        xaxis_range=[hist_df['time'].max() - pd.Timedelta(days=365), hist_df['time'].max()]
+    )
 
-        chart_col, info_col = st.columns([6, 2])
+    chart_col, info_col = st.columns([6, 2])
 
-        with chart_col:
-            st.plotly_chart(fig, use_container_width=True)
+    with chart_col:
+        st.plotly_chart(fig, use_container_width=True)
 
-        with info_col:
-            info = company_df[company_df.symbol == symbol].iloc[0]
-            st.subheader(":information_source: Thông tin doanh nghiệp")
-            st.write(f"**Tên:** {info['Company Common Name']}")
-            st.write(f"**Ngành:** {info['GICS Industry Name']}")
-            st.write(f"**Năm thành lập:** {info['Organization Founded Year']}")
-            st.write(f"**Sàn:** {info['Exchange Name']}")
+    with info_col:
+        info = company_df[company_df.symbol == symbol].iloc[0]
+        st.subheader(":information_source: Thông tin doanh nghiệp")
+        st.write(f"**Tên:** {info['Company Common Name']}")
+        st.write(f"**Ngành:** {info['GICS Industry Name']}")
+        st.write(f"**Năm thành lập:** {info['Organization Founded Year']}")
+        st.write(f"**Sàn:** {info['Exchange Name']}")
 
-            news = get_news(symbol)
-            st.subheader(":newspaper: Tin tức liên quan")
-            for _, row in news.head(5).iterrows():
-                st.markdown(f"[{row['newsdate']} - {row['title']}]({row['url']})")
+        news = get_news(symbol)
+        st.subheader(":newspaper: Tin tức liên quan")
+        for _, row in news.head(5).iterrows():
+            st.markdown(f"[{row['newsdate']} - {row['title']}]({row['url']})")
 
 # === Tab 2: CANSLIM ===
 with tabs[1]:
