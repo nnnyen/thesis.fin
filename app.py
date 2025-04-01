@@ -52,10 +52,10 @@ with tabs[0]:
     hist_df = hist_df.set_index('time').asfreq('D').ffill().reset_index()
 
     rows = 1
-    row_heights = [0.6]
+    row_heights = [1.0]
     if apply and any(ind in indicators for ind in ["RSI", "MACD", "Stochastic Oscillator"]):
         rows += 1
-        row_heights.append(0.4)
+        row_heights = [0.55, 0.45]
 
     fig = make_subplots(
         rows=rows, cols=1,
@@ -112,7 +112,7 @@ with tabs[0]:
             fig.add_trace(go.Scatter(x=hist_df['time'], y=d_percent, mode='lines', name='%D'), row=indicator_row, col=1)
 
     fig.update_layout(
-        height=1000,
+        height=900,
         title=f"Biểu đồ giá cổ phiếu {symbol}",
         xaxis_rangeslider_visible=True,
         xaxis_range=[hist_df['time'].max() - pd.Timedelta(days=365), hist_df['time'].max()],
@@ -123,7 +123,8 @@ with tabs[0]:
         xaxis_spikethickness=1,
         xaxis_spikedash='dot',
         xaxis_spikecolor='black',
-        showlegend=True
+        showlegend=True,
+        margin=dict(l=10, r=10, t=30, b=10)
     )
 
     chart_col, info_col = st.columns([7, 2])
