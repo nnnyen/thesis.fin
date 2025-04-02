@@ -6,6 +6,7 @@ from vnstock import Vnstock
 from bs4 import BeautifulSoup
 import urllib3
 
+
 # === Setup ===
 st.set_page_config(page_title="NY SECURITIES", layout="wide")
 http = urllib3.PoolManager()
@@ -30,7 +31,7 @@ def get_news(symbol):
         return pd.DataFrame([])
 
 # === Layout ===
-tabs = st.tabs(["Biểu đồ giá", "STOCK RECOMMEND BY CANSLIM"])
+tabs = st.tabs(["Biểu đồ giá", "STOCK RECOMMEND BY CANSLIM", "Financial Ratio"])
 
 # === Tab 1: Biểu đồ giá ===
 with tabs[0]:
@@ -45,7 +46,7 @@ with tabs[0]:
         apply = st.button("Áp dụng")
 
     stock = Vnstock().stock(symbol=symbol, source='TCBS')
-    hist_df = stock.quote.history(symbol=symbol, start="2022-01-01", end="2025-01-01", interval="1D")
+    hist_df = stock.quote.history(symbol=symbol, start="2022-01-01", end=pd.Timestamp.today().strftime("%Y-%m-%d"), interval="1D")
     hist_df['time'] = pd.to_datetime(hist_df['time'])
     hist_df = hist_df.drop_duplicates(subset='time')
     hist_df = hist_df.set_index('time').asfreq('D').ffill().reset_index()
@@ -54,7 +55,7 @@ with tabs[0]:
     row_heights = [1.0]
     if apply and any(ind in indicators for ind in ["RSI", "MACD", "Stochastic Oscillator"]):
         rows += 1
-        row_heights = [0.7, 0.3]
+        row_heights = [0.65, 0.35]
 
     fig = make_subplots(
         rows=rows, cols=1,
