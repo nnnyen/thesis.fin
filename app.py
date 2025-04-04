@@ -31,7 +31,7 @@ def get_news(symbol):
         return pd.DataFrame([])
 
 # === Layout ===
-tabs = st.tabs(["Biểu đồ giá", "STOCK RECOMMEND BY CANSLIM", "Financial Ratio"])
+tabs = st.tabs(["Biểu đồ giá", "STOCK RECOMMEND BY CANSLIM"])
 
 # === Tab 1: Biểu đồ giá ===
 with tabs[0]:
