@@ -174,56 +174,7 @@ with tabs[1]:
         use_container_width=True,
         hide_index=True
     )
-# === Tab 3: Finacial health===
-with tabs[2]:
-    st.title(":bar_chart: Financial Ratio")
 
-    df = pd.read_csv("df.csv")
-    industry_col = "GICS Industry Name"
-
-    if industry_col not in company_df.columns:
-        st.error(f"Cột '{industry_col}' không tồn tại trong dữ liệu company_list.xlsx")
-        st.stop()
-
-    df = df.merge(company_df[['symbol', industry_col]], left_on="Ticker", right_on="symbol", how="left")
-
-    columns = ["CR(X1)", "QR(X2)", "DR(X3)", "TA(X4)", "IT(X5))", "PM(X6))", "ROA(X7))", "ROE(X8)", "BEP(X9))", "NWC(X10))", "RE(X11)", "MVE(X12)"]
-    selected_cols = st.multiselect("Chọn các biến:", columns, default=["CR(X1)", "DR(X3)", "TA(X4)", "PM(X6))", "NWC(X10))"])
-
-    if selected_cols:
-        st.write("### Trung bình ngành")
-        industry_means = df.groupby(industry_col)[selected_cols].mean().rename_axis("Ngành")
-        st.dataframe(industry_means)
-
-        st.write("### Các mã có giá trị cao hơn trung bình ngành")
-        rows = []
-        for _, row in df.iterrows():
-            industry = row[industry_col]
-            keep = True
-            for col in selected_cols:
-                if pd.isna(row[col]) or pd.isna(industry_means.loc[industry, col]) or row[col] <= industry_means.loc[industry, col]:
-                    keep = False
-                    break
-            if keep:
-                rows.append(row)
-
-        filtered_df = pd.DataFrame(rows)
-        st.dataframe(filtered_df[["Ticker"] + selected_cols + [industry_col]])
-
-        st.write("### Dữ liệu của quý gần nhất")
-        if "Period Ending" in df.columns:
-            latest_quarter = df["Period Ending"].max()
-            st.write(f"#### Quý gần nhất: {latest_quarter}")
-            latest_df = filtered_df[filtered_df["Period Ending"] == latest_quarter]
-            st.dataframe(latest_df[["Ticker"] + selected_cols + [industry_col, "Period Ending"]])
-            st.download_button(
-                label="📥 Tải xuống CSV",
-                data=latest_df.to_csv(index=False),
-                file_name=f"financial_ratio_latest_quarter.csv",
-                mime="text/csv"
-            )
-        else:
-            st.warning("Không tìm thấy cột 'Period Ending' để lọc quý gần nhất.")
 
 # === CSS xanh lá ===
 st.markdown("""
