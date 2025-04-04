@@ -177,8 +177,14 @@ with tabs[1]:
 # === Tab 3: Finacial health===
 with tabs[2]:
     st.title(":bar_chart: Financial Ratio")
+
     df = pd.read_csv("df.csv")
     industry_col = "GICS Industry Name"
+
+    if industry_col not in company_df.columns:
+        st.error(f"Cột '{industry_col}' không tồn tại trong dữ liệu company_list.xlsx")
+        st.stop()
+
     df = df.merge(company_df[['symbol', industry_col]], left_on="Ticker", right_on="symbol", how="left")
 
     columns = ["CR(X1)", "QR(X2)", "DR(X3)", "TA(X4)", "IT(X5))", "PM(X6))", "ROA(X7))", "ROE(X8)", "BEP(X9))", "NWC(X10))", "RE(X11)", "MVE(X12)"]
@@ -195,7 +201,7 @@ with tabs[2]:
             industry = row[industry_col]
             keep = True
             for col in selected_cols:
-                if pd.isna(row[col]) or row[col] <= industry_means.loc[industry, col]:
+                if pd.isna(row[col]) or pd.isna(industry_means.loc[industry, col]) or row[col] <= industry_means.loc[industry, col]:
                     keep = False
                     break
             if keep:
